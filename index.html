@@ -23,6 +23,11 @@ header{padding:28px 0 14px;border-bottom:1px dashed var(--line);margin-bottom:20
 h1{font-weight:900;font-size:clamp(1.5rem,4vw,2.2rem);letter-spacing:.04em;margin:.15em 0}
 .sub{color:var(--muted);font-size:.88rem}
 .plan-badge{display:inline-block;font-family:var(--mono);font-size:.72rem;background:var(--amber);color:#1a1204;padding:2px 10px;border-radius:3px;font-weight:700;margin-left:8px;vertical-align:middle}
+.tabs{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.tab{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:8px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-family:'Noto Sans TC';font-size:.86rem;border-bottom:none}
+.tab small{display:block;font-family:var(--mono);font-size:.66rem;letter-spacing:.06em;margin-top:2px}
+.tab.active{background:var(--amber);color:#1a1204;font-weight:700;border-color:var(--amber)}
+.tab.active small{color:#5c4310}
 .grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px}
 @media(max-width:920px){.grid{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
@@ -89,8 +94,9 @@ h1{font-weight:900;font-size:clamp(1.5rem,4vw,2.2rem);letter-spacing:.04em;margi
 <div class="wrap">
 <header>
   <div class="eyebrow">Asia Miles · oneworld Multi-Carrier Award</div>
-  <h1>亞萬環球票規劃器<span class="plan-badge">A 方案｜台北出發・歐美線</span></h1>
+  <h1>亞萬環球票規劃器<span class="plan-badge" id="planBadge"></span></h1>
   <div class="sub">輸入各航段，即時計算大圓距離、兌換區間、所需里數，並檢查寰宇一家開票規則（2023.10 起適用之換算表）</div>
+  <div class="tabs" id="tabs"></div>
 </header>
 
 <div class="grid">
@@ -99,7 +105,7 @@ h1{font-weight:900;font-size:clamp(1.5rem,4vw,2.2rem);letter-spacing:.04em;margi
       <h2>航段編排 <span class="en">ROUTE SEGMENTS</span></h2>
       <div id="segList"></div>
       <button class="btn" onclick="addSeg()">＋ 新增航段</button>
-      <button class="btn ghost" onclick="loadPlanA()">重設為 A 方案範例</button>
+      <button class="btn ghost" onclick="resetPlan()">重設為本方案範例</button>
       <span class="saved" id="saveState"></span>
       <div style="margin-top:12px;font-size:.76rem;color:var(--muted)">
         機場欄輸入 IATA 代碼或中文（例：TPE、倫敦）。同城市銜接點可切換「停留」（>24 小時）／「轉機」（<24 小時）；前後城市不同時自動判定為「開口」（地面自行移動）。
@@ -215,18 +221,57 @@ const CHART = [
 /* ---------- 狀態 ---------- */
 let segs = [];      // {from,to,airline}
 let conns = [];     // 銜接點型態：'stop' | 'transit'（開口自動判定，不存）
+let curPlan = "A";  // 目前方案
 
-const PLAN_A = {
-  segs:[
-    {from:"TPE",to:"HKG",airline:"CX"},
-    {from:"HKG",to:"LHR",airline:"CX"},
-    {from:"LHR",to:"JFK",airline:"BA"},
-    {from:"JFK",to:"LAX",airline:"AA"},
-    {from:"LAX",to:"NRT",airline:"JL"},
-    {from:"NRT",to:"TPE",airline:"JL"}
-  ],
-  conns:["transit","stop","stop","stop","stop"]
+const PLANS = {
+  A:{
+    badge:"A 方案｜歐美經典", tab:"A・歐美經典", note:"230k・跨美加歐",
+    segs:[
+      {from:"TPE",to:"HKG",airline:"CX"},
+      {from:"HKG",to:"LHR",airline:"CX"},
+      {from:"LHR",to:"JFK",airline:"BA"},
+      {from:"JFK",to:"LAX",airline:"AA"},
+      {from:"LAX",to:"NRT",airline:"JL"},
+      {from:"NRT",to:"TPE",airline:"JL"}
+    ],
+    conns:["transit","stop","stop","stop","stop"]
+  },
+  B:{
+    badge:"B 方案｜冰島真環球", tab:"B・冰島真環球", note:"210k・環球地板價",
+    segs:[
+      {from:"TPE",to:"HKG",airline:"CX"},
+      {from:"HKG",to:"HEL",airline:"AY"},
+      {from:"HEL",to:"KEF",airline:"AY"},
+      {from:"KEF",to:"SEA",airline:"AS"},
+      {from:"SEA",to:"NRT",airline:"JL"},
+      {from:"NRT",to:"TPE",airline:"JL"}
+    ],
+    conns:["transit","stop","stop","stop","stop"]
+  },
+  C:{
+    badge:"C 方案｜澳洲省里", tab:"C・澳洲省里", note:"170k・最少里數",
+    segs:[
+      {from:"TPE",to:"NRT",airline:"JL"},
+      {from:"NRT",to:"SYD",airline:"JL"},
+      {from:"SYD",to:"MEL",airline:"QF"},
+      {from:"MEL",to:"HKG",airline:"CX"},
+      {from:"HKG",to:"TPE",airline:"CX"}
+    ],
+    conns:["transit","stop","stop","stop"]
+  }
 };
+
+function renderTabs(){
+  document.getElementById("tabs").innerHTML = Object.entries(PLANS).map(([k,p])=>
+    `<button class="tab ${k===curPlan?'active':''}" onclick="switchPlan('${k}')">${p.tab}<small>${p.note}</small></button>`).join("");
+  document.getElementById("planBadge").textContent = PLANS[curPlan].badge;
+}
+async function switchPlan(k){
+  curPlan = k;
+  await load();
+  renderTabs(); renderSegs();
+  try{ if(window.storage) await window.storage.set("rtw:activePlan", curPlan); }catch(e){}
+}
 
 /* ---------- 工具 ---------- */
 function hav(a,b){
@@ -293,7 +338,7 @@ function addSeg(){
   renderSegs(); save();
 }
 function delSeg(i){ segs.splice(i,1); conns.splice(Math.max(0,i-1<conns.length?i-1:0),1); conns.length=Math.max(0,segs.length-1); renderSegs(); save(); }
-function loadPlanA(){ segs = PLAN_A.segs.map(s=>({...s})); conns=[...PLAN_A.conns]; renderSegs(); save(); }
+function resetPlan(){ const p=PLANS[curPlan]; segs = p.segs.map(s=>({...s})); conns=[...p.conns]; renderSegs(); save(); }
 
 /* ---------- 計算與規則 ---------- */
 function calc(){
@@ -394,7 +439,7 @@ function save(){
   saveTimer=setTimeout(async ()=>{
     try{
       if(window.storage){
-        await window.storage.set("rtw:planA", JSON.stringify({segs,conns}));
+        await window.storage.set("rtw:plan"+curPlan, JSON.stringify({segs,conns}));
         document.getElementById("saveState").textContent="已自動儲存 ✓";
       }
     }catch(e){ /* 無儲存環境時忽略 */ }
@@ -403,17 +448,27 @@ function save(){
 async function load(){
   try{
     if(window.storage){
-      const r = await window.storage.get("rtw:planA");
+      const r = await window.storage.get("rtw:plan"+curPlan);
       if(r&&r.value){ const d=JSON.parse(r.value); segs=d.segs; conns=d.conns; return; }
     }
   }catch(e){}
-  segs = PLAN_A.segs.map(s=>({...s})); conns=[...PLAN_A.conns];
+  const p = PLANS[curPlan];
+  segs = p.segs.map(s=>({...s})); conns=[...p.conns];
 }
 
 /* ---------- 初始化 ---------- */
 const dl=document.getElementById("apList");
 dl.innerHTML = Object.entries(AP).map(([k,v])=>`<option value="${k}">${v[1]}</option>`).join("");
-load().then(renderSegs);
+(async ()=>{
+  try{
+    if(window.storage){
+      const r = await window.storage.get("rtw:activePlan");
+      if(r&&r.value&&PLANS[r.value]) curPlan = r.value;
+    }
+  }catch(e){}
+  await load();
+  renderTabs(); renderSegs();
+})();
 </script>
 </body>
 </html>
