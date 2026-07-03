@@ -149,11 +149,12 @@ h1{font-weight:900;font-size:clamp(1.5rem,4vw,2.2rem);letter-spacing:.04em;margi
       <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
         <button class="btn" style="margin:0;padding:8px 12px;font-size:.82rem" onclick="openWholeMap()">🗺 整條路線地圖</button>
         <button class="btn ghost" style="margin:0;padding:8px 12px;font-size:.82rem" onclick="copyAllOD()">複製全部航段</button>
+        <button class="btn ghost" style="margin:0;padding:8px 12px;font-size:.82rem" onclick="copyCXUrl()">複製國泰兌換頁網址</button>
       </div>
       <div id="searchList"></div>
       <div style="font-size:.74rem;color:var(--muted);margin-top:10px;line-height:1.5">
-        流程：點航段的「複製」→ 開國泰官網（自己登入後用「查票神器」外掛批次查 20 天）或 seats.aero，貼上代碼即查。gcmap 已預填、可直接看距離與航線圖。<b style="color:var(--amber)">密碼全程只在你與國泰官網之間，本工具不碰。</b><br>
-        建議先查最難的長途商務段，短途區內段最後補。
+        <b style="color:var(--amber)">iPhone 查票神器用法：</b>查票神器只在 <b>Safari</b> 內作用。先按「複製國泰兌換頁網址」，貼到 Safari 網址列開啟並加書籤、登入；之後每段按「複製 OD」貼進搜尋欄，用查票神器批次查 20 天。（若連結一直跳去 Chrome：設定 → App → 預設瀏覽器 App → 改 Safari，或直接用 Safari 開這個規劃器。）<br>
+        <b style="color:var(--amber)">密碼全程只在你與國泰官網之間，本工具不碰。</b>建議先查最難的長途商務段，短途區內段最後補。
       </div>
     </div>
   </div>
@@ -443,13 +444,14 @@ function renderSearch(){
       <div class="od">${od}<small>${a[1]}→${b[1]}｜${s.airline}</small></div>
       <div class="qbtns">
         <button class="qb copy" onclick="copyText('${od}','${od}')">複製 ${od}</button>
-        <a class="qb" href="${CX_URL}" target="_blank" rel="noopener" onclick="copyText('${od}','${od}')" title="複製並開啟國泰官網，登入後用查票神器批次查20天">國泰＋查票神器</a>
+        <a class="qb" href="${CX_URL}" target="_blank" rel="noopener" onclick="copyText('${od}','${od}')" title="複製此段代碼；國泰兌換頁請在 Safari 開啟才能用查票神器">國泰＋查票神器</a>
         <a class="qb" href="${SEATS_URL}" target="_blank" rel="noopener" onclick="copyText('${od}','${od}')" title="複製並開啟 seats.aero">seats.aero</a>
         <a class="qb" href="${gcmapURL(od)}" target="_blank" rel="noopener" title="Great Circle Mapper：航線圖與距離">gcmap</a>
       </div>
     </div>`;
   }).join("");
 }
+function copyCXUrl(){ copyText(CX_URL, "國泰兌換頁網址（貼到 Safari 開啟）"); }
 function openWholeMap(){
   const vs=validSegs(); if(!vs.length){toast("尚無航段");return;}
   window.open(gcmapURL(vs.map(s=>s.from+"-"+s.to).join(",")), "_blank", "noopener");
