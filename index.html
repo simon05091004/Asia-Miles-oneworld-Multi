@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>亞萬環球票規劃器｜oneworld 寰宇一家</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E1B2C; --panel:#16283F; --panel2:#1B3049; --line:#25415F;
+  --txt:#DCE7F5; --muted:#8CA3BF; --amber:#FFB547; --amber-dim:#8a6423;
+  --ok:#58D5A8; --err:#FF7A6B; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Noto Sans TC',system-ui,sans-serif;line-height:1.55;padding-bottom:60px}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:repeating-linear-gradient(0deg,transparent 0 39px,rgba(140,163,191,.045) 39px 40px),
+             repeating-linear-gradient(90deg,transparent 0 39px,rgba(140,163,191,.045) 39px 40px)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px;position:relative;z-index:1}
+header{padding:28px 0 14px;border-bottom:1px dashed var(--line);margin-bottom:20px}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.28em;color:var(--amber);text-transform:uppercase}
+h1{font-weight:900;font-size:clamp(1.5rem,4vw,2.2rem);letter-spacing:.04em;margin:.15em 0}
+.sub{color:var(--muted);font-size:.88rem}
+.plan-badge{display:inline-block;font-family:var(--mono);font-size:.72rem;background:var(--amber);color:#1a1204;padding:2px 10px;border-radius:3px;font-weight:700;margin-left:8px;vertical-align:middle}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px}
+@media(max-width:920px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h2{font-size:.95rem;font-weight:700;letter-spacing:.08em;margin-bottom:12px;color:var(--amber)}
+.card h2 .en{font-family:var(--mono);font-size:.68rem;color:var(--muted);letter-spacing:.2em;margin-left:8px;font-weight:400}
+
+/* segments */
+.seg{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:6px;position:relative}
+.seg-row{display:grid;grid-template-columns:28px 1fr 34px 1fr 150px 92px 30px;gap:8px;align-items:center}
+@media(max-width:720px){.seg-row{grid-template-columns:24px 1fr 24px 1fr;gap:6px}
+ .seg-row .airline,.seg-row .dist{grid-column:2/-1}}
+.seg-no{font-family:var(--mono);color:var(--amber);font-size:.8rem;text-align:center}
+.seg input,.seg select{width:100%;background:#0F1E31;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:8px 9px;font-family:var(--mono);font-size:.86rem}
+.seg input:focus,.seg select:focus{outline:none;border-color:var(--amber)}
+.arrow{color:var(--muted);text-align:center;font-family:var(--mono)}
+.dist{font-family:var(--mono);font-size:.82rem;color:var(--muted);text-align:right}
+.dist b{color:var(--txt)}
+.del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.05rem;padding:4px}
+.del:hover{color:var(--err)}
+.airport-hint{font-size:.72rem;color:var(--muted);margin-top:4px;padding-left:36px;min-height:1em}
+
+/* connection chip */
+.conn{display:flex;align-items:center;gap:8px;margin:2px 0 8px 14px;padding-left:14px;border-left:2px dotted var(--line);font-size:.78rem;color:var(--muted)}
+.conn .chips{display:flex;gap:6px}
+.chip{border:1px solid var(--line);background:#0F1E31;color:var(--muted);font-size:.75rem;padding:3px 10px;border-radius:20px;cursor:pointer;font-family:'Noto Sans TC'}
+.chip.active{background:var(--amber);color:#1a1204;border-color:var(--amber);font-weight:700}
+.chip.oj{background:#3a2733;color:#ffb0c8;border-color:#5c3a4c;cursor:default}
+.btn{background:var(--amber);color:#1a1204;border:none;font-weight:700;font-family:'Noto Sans TC';padding:10px 18px;border-radius:7px;cursor:pointer;font-size:.9rem;margin-top:8px}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--amber);border:1px dashed var(--amber-dim);margin-left:8px}
+
+/* dashboard */
+.big-dist{font-family:var(--mono);font-size:2rem;font-weight:700;letter-spacing:.02em}
+.big-dist small{font-size:.85rem;color:var(--muted);font-weight:400}
+.miles-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.9rem}
+.miles-table td{padding:7px 4px;border-top:1px dashed var(--line);font-family:var(--mono)}
+.miles-table td:last-child{text-align:right;font-weight:700}
+.miles-table tr.hl td{color:var(--amber);font-size:1.02rem}
+.miles-table tr.hl td:last-child{font-size:1.18rem}
+
+/* zone ladder — signature */
+.ladder{margin-top:14px}
+.zone-row{display:grid;grid-template-columns:110px 1fr 86px;gap:8px;font-family:var(--mono);font-size:.72rem;color:var(--muted);padding:3px 6px;border-radius:5px;align-items:center}
+.zone-row .bar{height:5px;background:var(--line);border-radius:3px;position:relative;overflow:hidden}
+.zone-row .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--amber);border-radius:3px}
+.zone-row.cur{background:#26364d;color:var(--txt);outline:1px solid var(--amber-dim)}
+.zone-row.cur .zlab{color:var(--amber);font-weight:700}
+.zone-hint{font-size:.78rem;color:var(--muted);margin-top:10px;padding:8px 10px;background:#0F1E31;border-radius:6px;border-left:3px solid var(--amber)}
+.zone-hint b{color:var(--amber);font-family:var(--mono)}
+
+/* rules */
+.rule{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px dashed var(--line);font-size:.84rem}
+.rule:first-of-type{border-top:none}
+.rule .ic{font-family:var(--mono);font-weight:700;flex:none;width:18px;text-align:center}
+.rule.ok .ic{color:var(--ok)} .rule.bad .ic{color:var(--err)}
+.rule.bad{color:#ffc9c0}
+.rule .cnt{font-family:var(--mono);color:var(--muted);margin-left:auto;flex:none;font-size:.78rem}
+.foot{margin-top:26px;color:var(--muted);font-size:.76rem;border-top:1px dashed var(--line);padding-top:12px}
+.foot a{color:var(--amber)}
+.saved{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin-left:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Asia Miles · oneworld Multi-Carrier Award</div>
+  <h1>亞萬環球票規劃器<span class="plan-badge">A 方案｜台北出發・歐美線</span></h1>
+  <div class="sub">輸入各航段，即時計算大圓距離、兌換區間、所需里數，並檢查寰宇一家開票規則（2023.10 起適用之換算表）</div>
+</header>
+
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>航段編排 <span class="en">ROUTE SEGMENTS</span></h2>
+      <div id="segList"></div>
+      <button class="btn" onclick="addSeg()">＋ 新增航段</button>
+      <button class="btn ghost" onclick="loadPlanA()">重設為 A 方案範例</button>
+      <span class="saved" id="saveState"></span>
+      <div style="margin-top:12px;font-size:.76rem;color:var(--muted)">
+        機場欄輸入 IATA 代碼或中文（例：TPE、倫敦）。同城市銜接點可切換「停留」（>24 小時）／「轉機」（<24 小時）；前後城市不同時自動判定為「開口」（地面自行移動）。
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card" style="margin-bottom:20px">
+      <h2>兌換儀表板 <span class="en">AWARD METER</span></h2>
+      <div class="big-dist"><span id="totalDist">0</span> <small>mi 總飛行距離</small></div>
+      <table class="miles-table">
+        <tr id="rowY"><td>經濟艙 Y</td><td id="mY">—</td></tr>
+        <tr id="rowJ" class="hl"><td>商務艙 J ★</td><td id="mJ">—</td></tr>
+        <tr id="rowF"><td>頭等艙 F</td><td id="mF">—</td></tr>
+      </table>
+      <div class="ladder" id="ladder"></div>
+      <div class="zone-hint" id="zoneHint"></div>
+    </div>
+
+    <div class="card">
+      <h2>開票規則檢查 <span class="en">RULE CHECK</span></h2>
+      <div id="rules"></div>
+    </div>
+  </div>
+</div>
+
+<div class="foot">
+  ⚠ 本工具僅供路線規劃與里數試算，實際可否開票以國泰航空為準。混艙時整段以最高艙等計價，故建議全程同艙等；不可換特選經濟艙。
+  規劃完成後請以「查票神器」外掛或 seats.aero 逐段確認獎勵機位供應，再透過國泰官網／客服（+852-2747-3333）兌換。
+  兌換表為 2023 年 10 月 1 日起適用之寰宇一家換算表（未受 2025/4、2026/5 改表影響）。
+</div>
+</div>
+
+<datalist id="apList"></datalist>
+
+<script>
+/* ---------- 機場資料庫（IATA, 城市鍵, 中文名, 國家/地區碼, 緯度, 經度） ---------- */
+const AP = {
+TPE:["taipei","台北桃園","TW",25.0777,121.2328], TSA:["taipei","台北松山","TW",25.0694,121.5525],
+KHH:["kaohsiung","高雄","TW",22.5771,120.3498],
+HKG:["hongkong","香港","HK",22.3080,113.9185],
+CAN:["guangzhou","廣州","CN",23.3924,113.2988], PVG:["shanghai","上海浦東","CN",31.1443,121.8083],
+PEK:["beijing","北京首都","CN",40.0799,116.6031], CTU:["chengdu","成都天府","CN",30.3125,104.4419], CKG:["chongqing","重慶","CN",29.7192,106.6417],
+NRT:["tokyo","東京成田","JP",35.7720,140.3929], HND:["tokyo","東京羽田","JP",35.5494,139.7798],
+KIX:["osaka","大阪關西","JP",34.4347,135.2441], NGO:["nagoya","名古屋","JP",34.8584,136.8054],
+FUK:["fukuoka","福岡","JP",33.5859,130.4510], CTS:["sapporo","札幌新千歲","JP",42.7752,141.6923], OKA:["okinawa","沖繩","JP",26.1958,127.6459],
+ICN:["seoul","首爾仁川","KR",37.4602,126.4407], PUS:["busan","釜山","KR",35.1795,128.9382],
+BKK:["bangkok","曼谷","TH",13.6900,100.7501], HKT:["phuket","布吉","TH",8.1132,98.3169],
+SIN:["singapore","新加坡","SG",1.3644,103.9915],
+KUL:["kualalumpur","吉隆坡","MY",2.7456,101.7099], PEN:["penang","檳城","MY",5.2971,100.2770],
+CGK:["jakarta","雅加達","ID",-6.1256,106.6559], DPS:["bali","峇里島","ID",-8.7482,115.1672],
+MNL:["manila","馬尼拉","PH",14.5086,121.0198], CEB:["cebu","宿霧","PH",10.3075,123.9790],
+HAN:["hanoi","河內","VN",21.2212,105.8072], SGN:["hochiminh","胡志明市","VN",10.8188,106.6520],
+PNH:["phnompenh","金邊","KH",11.5466,104.8441],
+DEL:["delhi","德里","IN",28.5562,77.1000], BOM:["mumbai","孟買","IN",19.0896,72.8656],
+CMB:["colombo","可倫坡","LK",7.1808,79.8841], MLE:["male","馬爾地夫馬累","MV",4.1918,73.5291],
+DOH:["doha","多哈","QA",25.2731,51.6081], AMM:["amman","安曼","JO",31.7226,35.9932],
+DXB:["dubai","杜拜","AE",25.2532,55.3657], TLV:["telaviv","特拉維夫","IL",32.0114,34.8867],
+MCT:["muscat","馬斯喀特","OM",23.5933,58.2844], IST:["istanbul","伊斯坦堡","TR",41.2753,28.7519],
+LHR:["london","倫敦希斯洛","GB",51.4700,-0.4543], LGW:["london","倫敦格域","GB",51.1537,-0.1821],
+MAN:["manchester","曼徹斯特","GB",53.3654,-2.2728], EDI:["edinburgh","愛丁堡","GB",55.9500,-3.3725],
+DUB:["dublin","都柏林","IE",53.4264,-6.2499],
+CDG:["paris","巴黎戴高樂","FR",49.0097,2.5479],
+AMS:["amsterdam","阿姆斯特丹","NL",52.3105,4.7683],
+FRA:["frankfurt","法蘭克福","DE",50.0379,8.5622], MUC:["munich","慕尼黑","DE",48.3538,11.7861],
+ZRH:["zurich","蘇黎世","CH",47.4581,8.5555], GVA:["geneva","日內瓦","CH",46.2381,6.1090],
+VIE:["vienna","維也納","AT",48.1103,16.5697],
+MAD:["madrid","馬德里","ES",40.4936,-3.5668], BCN:["barcelona","巴塞隆納","ES",41.2974,2.0833],
+LIS:["lisbon","里斯本","PT",38.7756,-9.1354], OPO:["porto","波多","PT",41.2481,-8.6814],
+FCO:["rome","羅馬","IT",41.8003,12.2389], MXP:["milan","米蘭","IT",45.6306,8.7281], VCE:["venice","威尼斯","IT",45.5053,12.3519],
+ATH:["athens","雅典","GR",37.9364,23.9445],
+HEL:["helsinki","赫爾辛基","FI",60.3172,24.9633],
+ARN:["stockholm","斯德哥爾摩","SE",59.6519,17.9186], CPH:["copenhagen","哥本哈根","DK",55.6181,12.6561],
+OSL:["oslo","奧斯陸","NO",60.1939,11.1004], KEF:["reykjavik","雷克雅維克","IS",63.9850,-22.6056],
+PRG:["prague","布拉格","CZ",50.1008,14.2600], BUD:["budapest","布達佩斯","HU",47.4298,19.2611], WAW:["warsaw","華沙","PL",52.1657,20.9671],
+JFK:["newyork","紐約甘迺迪","US",40.6413,-73.7781], EWR:["newyork","紐約紐華克","US",40.6895,-74.1745],
+BOS:["boston","波士頓","US",42.3656,-71.0096], IAD:["washington","華盛頓杜勒斯","US",38.9531,-77.4565],
+ORD:["chicago","芝加哥","US",41.9742,-87.9073], DFW:["dallas","達拉斯","US",32.8998,-97.0403],
+MIA:["miami","邁阿密","US",25.7959,-80.2870], ATL:["atlanta","亞特蘭大","US",33.6407,-84.4277],
+IAH:["houston","休士頓","US",29.9902,-95.3368], DEN:["denver","丹佛","US",39.8561,-104.6737],
+LAS:["lasvegas","拉斯維加斯","US",36.0840,-115.1537], PHX:["phoenix","鳳凰城","US",33.4373,-112.0078],
+LAX:["losangeles","洛杉磯","US",33.9416,-118.4085], SFO:["sanfrancisco","舊金山","US",37.6213,-122.3790],
+SEA:["seattle","西雅圖","US",47.4502,-122.3088], SAN:["sandiego","聖地牙哥","US",32.7338,-117.1933],
+HNL:["honolulu","檀香山","US",21.3187,-157.9225], ANC:["anchorage","安克拉治","US",61.1743,-149.9963],
+YVR:["vancouver","溫哥華","CA",49.1967,-123.1815], YYZ:["toronto","多倫多","CA",43.6777,-79.6248], YUL:["montreal","蒙特婁","CA",45.4707,-73.7408],
+MEX:["mexicocity","墨西哥城","MX",19.4363,-99.0721],
+GRU:["saopaulo","聖保羅","BR",-23.4356,-46.4731], GIG:["riodejaneiro","里約熱內盧","BR",-22.8100,-43.2506],
+EZE:["buenosaires","布宜諾斯艾利斯","AR",-34.8222,-58.5358], SCL:["santiago","聖地亞哥","CL",-33.3930,-70.7858],
+LIM:["lima","利馬","PE",-12.0219,-77.1143], BOG:["bogota","波哥大","CO",4.7016,-74.1469],
+JNB:["johannesburg","約翰尼斯堡","ZA",-26.1367,28.2411], CPT:["capetown","開普敦","ZA",-33.9715,18.6021],
+CAI:["cairo","開羅","EG",30.1219,31.4056], CMN:["casablanca","卡薩布蘭卡","MA",33.3675,-7.5900],
+SYD:["sydney","雪梨","AU",-33.9399,151.1753], MEL:["melbourne","墨爾本","AU",-37.6690,144.8410],
+BNE:["brisbane","布里斯本","AU",-27.3842,153.1175], PER:["perth","伯斯","AU",-31.9385,115.9672], ADL:["adelaide","阿德萊德","AU",-34.9285,138.5307],
+AKL:["auckland","奧克蘭","NZ",-37.0082,174.7850], CHC:["christchurch","基督城","NZ",-43.4894,172.5320],
+NAN:["nadi","楠迪","FJ",-17.7554,177.4434]
+};
+const AIRLINES = [
+ ["CX","國泰航空"],["JL","日本航空"],["BA","英國航空"],["AA","美國航空"],["AY","芬蘭航空"],
+ ["QR","卡達航空"],["QF","澳洲航空"],["IB","西班牙國家航空"],["MH","馬來西亞航空"],
+ ["AS","阿拉斯加航空"],["UL","斯里蘭卡航空"],["RJ","皇家約旦航空"],["AT","摩洛哥皇家航空"],
+ ["FJ","斐濟航空"],["WY","阿曼航空"]
+];
+/* 2023.10 起 oneworld 換算表：[下限, 上限, Y, J, F] */
+const CHART = [
+ [0,1000,30000,60000,75000],[1001,1500,35000,65000,85000],[1501,2000,40000,70000,95000],
+ [2001,4000,45000,80000,110000],[4001,7500,63000,100000,150000],[7501,9000,68000,120000,165000],
+ [9001,10000,77000,135000,175000],[10001,14000,95000,170000,250000],[14001,18000,105000,210000,310000],
+ [18001,20000,115000,230000,330000],[20001,25000,126000,250000,350000],[25001,35000,140000,265000,365000],
+ [35001,50000,160000,280000,380000]
+];
+
+/* ---------- 狀態 ---------- */
+let segs = [];      // {from,to,airline}
+let conns = [];     // 銜接點型態：'stop' | 'transit'（開口自動判定，不存）
+
+const PLAN_A = {
+  segs:[
+    {from:"TPE",to:"HKG",airline:"CX"},
+    {from:"HKG",to:"LHR",airline:"CX"},
+    {from:"LHR",to:"JFK",airline:"BA"},
+    {from:"JFK",to:"LAX",airline:"AA"},
+    {from:"LAX",to:"NRT",airline:"JL"},
+    {from:"NRT",to:"TPE",airline:"JL"}
+  ],
+  conns:["transit","stop","stop","stop","stop"]
+};
+
+/* ---------- 工具 ---------- */
+function hav(a,b){
+  const R=3958.8, r=Math.PI/180;
+  const dLat=(b[3]-a[3])*r, dLon=(b[4]-a[4])*r;
+  const s=Math.sin(dLat/2)**2+Math.cos(a[3]*r)*Math.cos(b[3]*r)*Math.sin(dLon/2)**2;
+  return Math.round(2*R*Math.asin(Math.sqrt(s)));
+}
+function apOf(code){ return AP[(code||"").trim().toUpperCase()] || null; }
+function apCode(code){ return (code||"").trim().toUpperCase(); }
+function segDist(s){ const a=apOf(s.from), b=apOf(s.to); return (a&&b)?hav(a,b):0; }
+function fmt(n){ return n.toLocaleString("en-US"); }
+
+/* ---------- 渲染航段 ---------- */
+function renderSegs(){
+  const el = document.getElementById("segList");
+  el.innerHTML = "";
+  segs.forEach((s,i)=>{
+    const d = segDist(s);
+    const a = apOf(s.from), b = apOf(s.to);
+    const seg = document.createElement("div");
+    seg.className = "seg";
+    seg.innerHTML = `
+      <div class="seg-row">
+        <div class="seg-no">${String(i+1).padStart(2,"0")}</div>
+        <input list="apList" value="${s.from||""}" placeholder="出發" onchange="upd(${i},'from',this.value)">
+        <div class="arrow">→</div>
+        <input list="apList" value="${s.to||""}" placeholder="抵達" onchange="upd(${i},'to',this.value)">
+        <select class="airline" onchange="upd(${i},'airline',this.value)">
+          ${AIRLINES.map(x=>`<option value="${x[0]}" ${s.airline===x[0]?"selected":""}>${x[0]} ${x[1]}</option>`).join("")}
+        </select>
+        <div class="dist">${d?`<b>${fmt(d)}</b> mi`:"— mi"}</div>
+        <button class="del" title="刪除航段" onclick="delSeg(${i})">✕</button>
+      </div>
+      <div class="airport-hint">${a?a[1]:""}${a&&b?" ⟶ ":""}${b?b[1]:""}</div>`;
+    el.appendChild(seg);
+
+    if(i < segs.length-1){
+      const nxt = segs[i+1];
+      const arrC = apOf(s.to), depC = apOf(nxt.from);
+      const same = arrC && depC && arrC[0]===depC[0];
+      const conn = document.createElement("div");
+      conn.className = "conn";
+      if(same){
+        conn.innerHTML = `銜接點 <b style="font-family:var(--mono)">${apCode(s.to)}</b>
+          <span class="chips">
+            <button class="chip ${conns[i]==='stop'?'active':''}" onclick="setConn(${i},'stop')">停留 >24h</button>
+            <button class="chip ${conns[i]==='transit'?'active':''}" onclick="setConn(${i},'transit')">轉機 <24h</button>
+          </span>`;
+      }else{
+        conn.innerHTML = `銜接點 <span class="chip oj">開口 Open-Jaw：${arrC?arrC[1]:"?"} ⇢ ${depC?depC[1]:"?"}（地面自行移動）</span>`;
+      }
+      el.appendChild(conn);
+    }
+  });
+  calc();
+}
+function upd(i,k,v){ segs[i][k] = k==='airline'? v : apCode(v); renderSegs(); save(); }
+function setConn(i,t){ conns[i]=t; renderSegs(); save(); }
+function addSeg(){
+  const last = segs[segs.length-1];
+  segs.push({from:last?last.to:"", to:"", airline:"CX"});
+  conns.push("stop");
+  renderSegs(); save();
+}
+function delSeg(i){ segs.splice(i,1); conns.splice(Math.max(0,i-1<conns.length?i-1:0),1); conns.length=Math.max(0,segs.length-1); renderSegs(); save(); }
+function loadPlanA(){ segs = PLAN_A.segs.map(s=>({...s})); conns=[...PLAN_A.conns]; renderSegs(); save(); }
+
+/* ---------- 計算與規則 ---------- */
+function calc(){
+  const total = segs.reduce((t,s)=>t+segDist(s),0);
+  document.getElementById("totalDist").textContent = fmt(total);
+
+  let zi = CHART.findIndex(z=>total>=z[0]&&total<=z[1]);
+  if(total===0) zi=-1;
+  const over = total>50000;
+  ["Y","J","F"].forEach((c,k)=>{
+    document.getElementById("m"+c).textContent =
+      (zi<0||over)?"—":fmt(CHART[zi][k+2])+" 里";
+  });
+
+  // 區間階梯
+  const lad = document.getElementById("ladder");
+  lad.innerHTML = CHART.map((z,i)=>{
+    const cur = i===zi;
+    const pct = cur? Math.min(100,(total-z[0])/(z[1]-z[0])*100) : (total>z[1]?100:0);
+    return `<div class="zone-row ${cur?'cur':''}">
+      <span class="zlab">${fmt(z[0])}–${fmt(z[1])}</span>
+      <span class="bar"><i style="width:${pct}%"></i></span>
+      <span style="text-align:right">J ${fmt(z[3]/1000)}k</span></div>`;
+  }).join("");
+
+  const hint = document.getElementById("zoneHint");
+  if(zi<0){ hint.textContent = "請先輸入航段。"; }
+  else if(over){ hint.innerHTML = "⚠ 已超過 <b>50,000 mi</b> 距離上限，無法以寰宇一家表格兌換。"; }
+  else{
+    const z=CHART[zi];
+    const up = z[1]-total, down = total-z[0]+1;
+    let t = `目前落在區間 <b>${fmt(z[0])}–${fmt(z[1])} mi</b>。`;
+    if(zi<CHART.length-1) t += ` 再飛 <b>${fmt(up+1)} mi</b> 會跳升一區（商務 +${fmt(CHART[zi+1][3]-z[3])} 里）；`;
+    if(zi>0) t += ` 削減 <b>${fmt(down)} mi</b> 可降一區（商務 −${fmt(z[3]-CHART[zi-1][3])} 里）。`;
+    if(zi<CHART.length-1 && up < (z[1]-z[0])*0.15) t += ` 💡 距上限很近，建議留些緩衝或用好用滿。`;
+    hint.innerHTML = t;
+  }
+
+  renderRules(total);
+}
+
+function renderRules(total){
+  const R = [];
+  const valid = segs.filter(s=>apOf(s.from)&&apOf(s.to));
+  const origin = valid[0]?apOf(valid[0].from):null;
+  const term = valid.length?apOf(valid[valid.length-1].to):null;
+
+  // 統計停留/轉機/開口 + 城市使用
+  let nStop=0,nTrans=0,nOJ=0; const midCities=[]; // {city,name,type}
+  for(let i=0;i<valid.length-1;i++){
+    const arr=apOf(valid[i].to), dep=apOf(valid[i+1].from);
+    if(!arr||!dep) continue;
+    if(arr[0]===dep[0]){
+      if(conns[i]==='transit'){ nTrans++; midCities.push({c:arr[0],n:arr[1],t:'轉機'}); }
+      else { nStop++; midCities.push({c:arr[0],n:arr[1],t:'停留'}); }
+    }else{
+      nOJ++;
+      midCities.push({c:arr[0],n:arr[1],t:'開口'});
+      midCities.push({c:dep[0],n:dep[1],t:'開口'});
+    }
+  }
+
+  R.push([total>0&&total<=50000, `總距離 ≤ 50,000 mi`, `${fmt(total)} mi`]);
+  R.push([nStop<=5, `中途停留 ≤ 5 次`, `${nStop}/5`]);
+  R.push([nTrans<=2, `轉機 ≤ 2 次`, `${nTrans}/2`]);
+  R.push([nOJ<=2, `開口行程 ≤ 2 次`, `${nOJ}/2`]);
+
+  // 起終點同一國家/地區（港、台、中國大陸各自獨立計算）
+  const sameCountry = origin&&term&&origin[2]===term[2];
+  R.push([!!sameCountry, `出發地與目的地須在同一國家/地區`, origin&&term?`${origin[2]}→${term[2]}`:"—"]);
+
+  // 航司組合
+  const set = new Set(valid.map(s=>s.airline));
+  const hasCX = set.has("CX");
+  const okAir = hasCX ? set.size>=3 : set.size>=2;
+  R.push([okAir&&valid.length>0, hasCX?`含國泰時須 ≥3 家寰宇一家航司`:`不含國泰時須 ≥2 家寰宇一家航司`, `${set.size} 家`]);
+
+  // 城市重複使用（停留/開口城市不得重複、不得為起訖城市；轉機為灰色地帶不計）
+  const restricted = midCities.filter(m=>m.t!=='轉機');
+  const seen={}; let dup=null, hitEnd=null;
+  restricted.forEach(m=>{
+    if(seen[m.c]) dup = m.n; seen[m.c]=1;
+    if(origin&&m.c===origin[0]) hitEnd=m.n;
+    if(term&&m.c===term[0]) hitEnd=m.n;
+  });
+  R.push([!dup, `每城市僅可停留/開口一次`, dup?`重複：${dup}`:"✓"]);
+  R.push([!hitEnd, `起訖城市不可作中途停留/開口（不可走回頭路）`, hitEnd?`違規：${hitEnd}`:"✓"]);
+
+  const el=document.getElementById("rules");
+  el.innerHTML = R.map(r=>`<div class="rule ${r[0]?'ok':'bad'}">
+    <span class="ic">${r[0]?'✓':'✗'}</span><span>${r[1]}</span><span class="cnt">${r[2]}</span></div>`).join("");
+}
+
+/* ---------- 儲存 ---------- */
+let saveTimer=null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async ()=>{
+    try{
+      if(window.storage){
+        await window.storage.set("rtw:planA", JSON.stringify({segs,conns}));
+        document.getElementById("saveState").textContent="已自動儲存 ✓";
+      }
+    }catch(e){ /* 無儲存環境時忽略 */ }
+  },600);
+}
+async function load(){
+  try{
+    if(window.storage){
+      const r = await window.storage.get("rtw:planA");
+      if(r&&r.value){ const d=JSON.parse(r.value); segs=d.segs; conns=d.conns; return; }
+    }
+  }catch(e){}
+  segs = PLAN_A.segs.map(s=>({...s})); conns=[...PLAN_A.conns];
+}
+
+/* ---------- 初始化 ---------- */
+const dl=document.getElementById("apList");
+dl.innerHTML = Object.entries(AP).map(([k,v])=>`<option value="${k}">${v[1]}</option>`).join("");
+load().then(renderSegs);
+</script>
+</body>
+</html>
